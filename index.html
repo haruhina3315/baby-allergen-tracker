@@ -101,6 +101,13 @@
       margin: 8px 0 18px;
     }
 
+    .share-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: -6px 0 18px;
+    }
+
     .field,
     .select {
       width: 100%;
@@ -131,6 +138,20 @@
 
     .primary:hover {
       background: var(--accent-strong);
+    }
+
+    .secondary {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--ink);
+      padding: 0 13px;
+      font-weight: 700;
+    }
+
+    .secondary:hover {
+      background: #fff4fa;
     }
 
     .summary {
@@ -253,6 +274,22 @@
       align-items: center;
     }
 
+    .date-pick {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      padding: 0 12px;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .date-pick.empty {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
     .small {
       min-height: 40px;
       border-radius: 8px;
@@ -357,6 +394,72 @@
       padding-top: 4px;
     }
 
+    .calendar-head {
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .calendar-month {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .icon-button {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #f8edf3;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .calendar-week,
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-week span {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: #fffafb;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .calendar-day:hover {
+      background: #e8f7f4;
+    }
+
+    .calendar-day.selected {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .calendar-day.today-mark {
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .calendar-day.blank,
+    .calendar-day:disabled {
+      background: transparent;
+      color: #c7bfca;
+      cursor: default;
+      box-shadow: none;
+    }
+
     .notice {
       margin-top: 18px;
       color: var(--muted);
@@ -421,6 +524,12 @@
       <button id="addButton" class="primary" type="button">食材を追加</button>
     </section>
 
+    <section class="share-actions" aria-label="データ共有">
+      <button id="exportButton" class="secondary" type="button">データを書き出す</button>
+      <button id="importButton" class="secondary" type="button">データを読み込む</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </section>
+
     <section class="summary" aria-label="概要">
       <div class="metric">
         <span>登録食材</span>
@@ -462,6 +571,24 @@
     </form>
   </dialog>
 
+  <dialog id="calendarDialog">
+    <div class="dialog-body">
+      <h3 id="calendarTitle" class="dialog-title">日付を選ぶ</h3>
+      <div class="calendar-head">
+        <button id="prevMonth" class="icon-button" type="button" aria-label="前の月">‹</button>
+        <div id="calendarMonth" class="calendar-month"></div>
+        <button id="nextMonth" class="icon-button" type="button" aria-label="次の月">›</button>
+      </div>
+      <div class="calendar-week" aria-hidden="true">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+      <div class="dialog-actions">
+        <button id="cancelCalendar" class="ghost" type="button">キャンセル</button>
+      </div>
+    </div>
+  </dialog>
+
   <script>
     const STORAGE_KEY = "babyAllergenTracker.v1";
     const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -489,10 +616,20 @@
     const sortSelect = document.querySelector("#sortSelect");
     const addButton = document.querySelector("#addButton");
     const foodDialog = document.querySelector("#foodDialog");
+    const calendarDialog = document.querySelector("#calendarDialog");
     const foodForm = document.querySelector("#foodForm");
     const foodName = document.querySelector("#foodName");
     const foodIcon = document.querySelector("#foodIcon");
     const cancelDialog = document.querySelector("#cancelDialog");
+    const calendarTitle = document.querySelector("#calendarTitle");
+    const calendarMonth = document.querySelector("#calendarMonth");
+    const calendarGrid = document.querySelector("#calendarGrid");
+    const prevMonth = document.querySelector("#prevMonth");
+    const nextMonth = document.querySelector("#nextMonth");
+    const cancelCalendar = document.querySelector("#cancelCalendar");
+    const exportButton = document.querySelector("#exportButton");
+    const importButton = document.querySelector("#importButton");
+    const importFile = document.querySelector("#importFile");
     const totalCount = document.querySelector("#totalCount");
     const staleCount = document.querySelector("#staleCount");
     const untriedCount = document.querySelector("#untriedCount");
@@ -500,6 +637,8 @@
 
     let foods = loadFoods();
     let storageAvailable = testStorage();
+    let activeCalendarFoodId = "";
+    let calendarDate = parseLocalDate(toLocalISO(new Date()));
 
     function createId(index = 0) {
       if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
@@ -644,7 +783,7 @@
           </div>
           <div>最後：${formatDate(food.lastDate)}</div>
           <div class="date-row">
-            <input class="field date-input" type="date" value="${food.lastDate}" max="${toLocalISO(new Date())}" aria-label="${escapeHtml(food.name)}をあげた日">
+            <button class="date-pick ${food.lastDate ? "" : "empty"}" type="button" aria-label="${escapeHtml(food.name)}をあげた日を選ぶ">${food.lastDate ? formatDate(food.lastDate) : "日付を選ぶ"}</button>
             <button class="small today-button" type="button">今日あげた</button>
           </div>
           <textarea aria-label="${escapeHtml(food.name)}のメモ" placeholder="量、体調、反応など">${escapeHtml(food.note || "")}</textarea>
@@ -654,8 +793,8 @@
           </div>
         `;
 
-        article.querySelector(".date-input").addEventListener("change", event => {
-          updateFood(food.id, { lastDate: event.target.value });
+        article.querySelector(".date-pick").addEventListener("click", () => {
+          openCalendar(food.id);
         });
         article.querySelector(".today-button").addEventListener("click", () => {
           updateFood(food.id, { lastDate: toLocalISO(new Date()) });
@@ -683,6 +822,117 @@
       if (rerender) render();
     }
 
+    function openCalendar(foodId) {
+      const food = foods.find(item => item.id === foodId);
+      if (!food) return;
+      activeCalendarFoodId = foodId;
+      calendarDate = parseLocalDate(food.lastDate || toLocalISO(new Date()));
+      calendarTitle.textContent = `${food.name}の日付を選ぶ`;
+      renderCalendar();
+      calendarDialog.showModal();
+    }
+
+    function renderCalendar() {
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      const selectedFood = foods.find(item => item.id === activeCalendarFoodId);
+      const selectedDate = selectedFood ? selectedFood.lastDate : "";
+      const todayISO = toLocalISO(new Date());
+      const today = parseLocalDate(todayISO);
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      calendarMonth.textContent = `${year}年${month + 1}月`;
+      calendarGrid.innerHTML = "";
+
+      for (let i = 0; i < firstDay.getDay(); i += 1) {
+        const blank = document.createElement("button");
+        blank.className = "calendar-day blank";
+        blank.type = "button";
+        blank.disabled = true;
+        calendarGrid.append(blank);
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day += 1) {
+        const date = new Date(year, month, day);
+        const iso = toLocalISO(date);
+        const button = document.createElement("button");
+        button.className = "calendar-day";
+        button.type = "button";
+        button.textContent = day;
+        button.setAttribute("aria-label", `${year}年${month + 1}月${day}日`);
+        if (iso === selectedDate) button.classList.add("selected");
+        if (iso === todayISO) button.classList.add("today-mark");
+        if (date > today) button.disabled = true;
+        button.addEventListener("click", () => {
+          updateFood(activeCalendarFoodId, { lastDate: iso });
+          calendarDialog.close();
+        });
+        calendarGrid.append(button);
+      }
+    }
+
+    function moveCalendarMonth(offset) {
+      calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + offset, 1);
+      renderCalendar();
+    }
+
+    function exportData() {
+      const data = {
+        app: "baby-allergen-tracker",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        foods
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `allergen-tracker-${toLocalISO(new Date())}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function normalizeImportedFoods(data) {
+      const importedFoods = Array.isArray(data) ? data : data && data.foods;
+      if (!Array.isArray(importedFoods)) return null;
+
+      return importedFoods
+        .filter(food => food && typeof food.name === "string" && food.name.trim())
+        .map((food, index) => ({
+          id: typeof food.id === "string" && food.id ? food.id : createId(index),
+          name: food.name.trim(),
+          icon: typeof food.icon === "string" ? food.icon : "・",
+          lastDate: typeof food.lastDate === "string" ? food.lastDate : "",
+          note: typeof food.note === "string" ? food.note : ""
+        }));
+    }
+
+    function importData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        try {
+          const imported = normalizeImportedFoods(JSON.parse(reader.result));
+          if (!imported || imported.length === 0) {
+            alert("読み込めるデータが見つかりませんでした。");
+            return;
+          }
+          if (!confirm("今のデータを、読み込んだデータで上書きしますか？")) return;
+          foods = imported;
+          saveFoods();
+          render();
+          alert("データを読み込みました。");
+        } catch (error) {
+          alert("データを読み込めませんでした。ファイルを確認してください。");
+        } finally {
+          importFile.value = "";
+        }
+      });
+      reader.readAsText(file);
+    }
+
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, char => ({
         "&": "&amp;",
@@ -695,6 +945,12 @@
 
     searchInput.addEventListener("input", render);
     sortSelect.addEventListener("change", render);
+    exportButton.addEventListener("click", exportData);
+    importButton.addEventListener("click", () => importFile.click());
+    importFile.addEventListener("change", event => importData(event.target.files[0]));
+    prevMonth.addEventListener("click", () => moveCalendarMonth(-1));
+    nextMonth.addEventListener("click", () => moveCalendarMonth(1));
+    cancelCalendar.addEventListener("click", () => calendarDialog.close());
     addButton.addEventListener("click", () => {
       foodName.value = "";
       foodIcon.value = "";
