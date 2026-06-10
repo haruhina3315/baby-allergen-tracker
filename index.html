@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>離乳食アレルゲン管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff8f3;
+      --panel: #ffffff;
+      --ink: #4b4a58;
+      --muted: #858194;
+      --line: #f0dde7;
+      --accent: #88cfc4;
+      --accent-strong: #5fb7ab;
+      --warn: #e59a65;
+      --danger: #df7d8d;
+      --fresh: #78bd8f;
+      --shadow: 0 14px 34px rgba(193, 143, 162, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 215, 225, 0.68), transparent 270px),
+        linear-gradient(135deg, rgba(206, 240, 234, 0.72), transparent 360px),
+        var(--bg);
+      color: var(--ink);
+      font-family: "UD Digi Kyokasho NP-R", "UD Digi Kyokasho N-R", "UD デジタル 教科書体 NP-R", "UD デジタル 教科書体 N-R", "Yu Gothic", "YuGothic", "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 22px 16px 44px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding: 12px 0 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "UD Digi Kyokasho NP-B", "UD Digi Kyokasho N-B", "UD Digi Kyokasho NP-R", "UD Digi Kyokasho N-R", "UD デジタル 教科書体 NP-B", "UD デジタル 教科書体 N-B", "UD デジタル 教科書体 NP-R", "UD デジタル 教科書体 N-R", "Yu Gothic", "YuGothic", "Noto Sans JP", sans-serif;
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 700;
+      line-height: 1.18;
+    }
+
+    .sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 720px;
+      font-size: 15px;
+    }
+
+    .today {
+      min-width: 160px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 8px;
+      text-align: right;
+    }
+
+    .today b {
+      display: block;
+      font-size: 22px;
+      margin-top: 4px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(140px, 210px) auto;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0 18px;
+    }
+
+    .field,
+    .select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .field:focus,
+    .select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(136, 207, 196, 0.24);
+    }
+
+    .primary {
+      min-height: 44px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 0 16px;
+      font-weight: 700;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 14px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .metric b {
+      font-size: 26px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      min-height: 236px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .name {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .name-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #e8f7f4;
+      flex: 0 0 auto;
+      font-size: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: #eaf7ee;
+      color: var(--fresh);
+      white-space: nowrap;
+    }
+
+    .badge.warn {
+      background: #fff0e4;
+      color: var(--warn);
+    }
+
+    .badge.empty {
+      background: #f1edf7;
+      color: var(--muted);
+    }
+
+    .days {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .days strong {
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    .days span {
+      color: var(--muted);
+    }
+
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .small {
+      min-height: 40px;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #e8f7f4;
+      color: var(--accent-strong);
+      font-weight: 700;
+    }
+
+    .ghost {
+      min-height: 36px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      padding: 0 10px;
+    }
+
+    .ghost:hover {
+      background: #f8edf3;
+      color: var(--ink);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 58px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffafb;
+      padding: 10px 12px;
+      color: var(--ink);
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      display: none;
+      padding: 36px 18px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.68);
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state.show {
+      display: block;
+    }
+
+    dialog {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0;
+      width: min(430px, calc(100% - 28px));
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 22px 80px rgba(36, 48, 47, 0.26);
+    }
+
+    dialog::backdrop {
+      background: rgba(93, 83, 105, 0.28);
+    }
+
+    .dialog-body {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    label input {
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .notice {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .storage-warning {
+      display: none;
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border: 1px solid #ffd6b8;
+      border-radius: 8px;
+      background: #fff4ec;
+      color: #9c623b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .storage-warning.show {
+      display: block;
+    }
+
+    @media (max-width: 720px) {
+      header,
+      .toolbar,
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .today {
+        text-align: left;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>離乳食アレルゲン管理</h1>
+        <p class="sub">最後にあげた日を食材ごとに記録します。日数が空いた食材から確認しやすいように並べ替えできます。</p>
+      </div>
+      <div class="today">
+        今日
+        <b id="todayLabel"></b>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="検索と操作">
+      <input id="searchInput" class="field" type="search" placeholder="食材を検索">
+      <select id="sortSelect" class="select" aria-label="並び替え">
+        <option value="oldest">日数が空いた順</option>
+        <option value="newest">最近あげた順</option>
+        <option value="name">名前順</option>
+        <option value="untried">未記録を上に</option>
+      </select>
+      <button id="addButton" class="primary" type="button">食材を追加</button>
+    </section>
+
+    <section class="summary" aria-label="概要">
+      <div class="metric">
+        <span>登録食材</span>
+        <b id="totalCount">0</b>
+      </div>
+      <div class="metric">
+        <span>7日以上あいている</span>
+        <b id="staleCount">0</b>
+      </div>
+      <div class="metric">
+        <span>未記録</span>
+        <b id="untriedCount">0</b>
+      </div>
+    </section>
+
+    <div id="storageWarning" class="storage-warning">この開き方では記録が保存されない場合があります。Safariで開き、共有ボタンからホーム画面に追加すると安定しやすいです。</div>
+
+    <section id="cards" class="grid" aria-live="polite"></section>
+    <div id="emptyState" class="empty-state">該当する食材がありません。</div>
+
+    <p class="notice">体調や量、反応などはメモ欄に残せます。強い反応や不安がある場合は、記録を見せながら医療機関に相談してください。</p>
+  </main>
+
+  <dialog id="foodDialog">
+    <form id="foodForm" method="dialog" class="dialog-body">
+      <h3 class="dialog-title">食材を追加</h3>
+      <label>
+        食材名
+        <input id="foodName" class="field" type="text" autocomplete="off" required placeholder="例：ごま">
+      </label>
+      <label>
+        アイコン
+        <input id="foodIcon" class="field" type="text" maxlength="2" autocomplete="off" placeholder="例：🌱">
+      </label>
+      <div class="dialog-actions">
+        <button id="cancelDialog" class="ghost" type="button">キャンセル</button>
+        <button class="primary" type="submit">追加</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "babyAllergenTracker.v1";
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const defaultFoods = [
+      { name: "卵黄", icon: "🥚" },
+      { name: "全卵", icon: "🥚" },
+      { name: "牛乳・乳製品", icon: "🥛" },
+      { name: "小麦", icon: "🌾" },
+      { name: "大豆", icon: "🫘" },
+      { name: "白身魚", icon: "🐟" },
+      { name: "えび・かに", icon: "🦐" },
+      { name: "そば", icon: "🍜" },
+      { name: "落花生", icon: "🥜" },
+      { name: "ナッツ類", icon: "🌰" },
+      { name: "ごま", icon: "🌱" },
+      { name: "バナナ", icon: "🍌" },
+      { name: "りんご", icon: "🍎" },
+      { name: "桃", icon: "🍑" }
+    ];
+
+    const todayLabel = document.querySelector("#todayLabel");
+    const cards = document.querySelector("#cards");
+    const emptyState = document.querySelector("#emptyState");
+    const searchInput = document.querySelector("#searchInput");
+    const sortSelect = document.querySelector("#sortSelect");
+    const addButton = document.querySelector("#addButton");
+    const foodDialog = document.querySelector("#foodDialog");
+    const foodForm = document.querySelector("#foodForm");
+    const foodName = document.querySelector("#foodName");
+    const foodIcon = document.querySelector("#foodIcon");
+    const cancelDialog = document.querySelector("#cancelDialog");
+    const totalCount = document.querySelector("#totalCount");
+    const staleCount = document.querySelector("#staleCount");
+    const untriedCount = document.querySelector("#untriedCount");
+    const storageWarning = document.querySelector("#storageWarning");
+
+    let foods = loadFoods();
+    let storageAvailable = testStorage();
+
+    function createId(index = 0) {
+      if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+        return globalThis.crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}-${index}`;
+    }
+
+    function readStorage() {
+      try {
+        return localStorage.getItem(STORAGE_KEY);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeStorage(value) {
+      try {
+        localStorage.setItem(STORAGE_KEY, value);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function testStorage() {
+      const key = `${STORAGE_KEY}.test`;
+      try {
+        localStorage.setItem(key, "1");
+        localStorage.removeItem(key);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function toLocalISO(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseLocalDate(value) {
+      if (!value) return null;
+      const [year, month, day] = value.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function daysSince(value) {
+      const date = parseLocalDate(value);
+      if (!date) return null;
+      const today = parseLocalDate(toLocalISO(new Date()));
+      return Math.max(0, Math.floor((today - date) / ONE_DAY));
+    }
+
+    function formatDate(value) {
+      if (!value) return "まだ記録なし";
+      const date = parseLocalDate(value);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    function loadFoods() {
+      const saved = readStorage();
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (error) {
+          console.warn("保存データを読み込めませんでした", error);
+        }
+      }
+
+      return defaultFoods.map((food, index) => ({
+        id: createId(index),
+        name: food.name,
+        icon: food.icon,
+        lastDate: "",
+        note: ""
+      }));
+    }
+
+    function saveFoods() {
+      storageAvailable = writeStorage(JSON.stringify(foods));
+    }
+
+    function statusFor(food) {
+      const days = daysSince(food.lastDate);
+      if (days === null) return { text: "未記録", className: "empty" };
+      if (days >= 7) return { text: "そろそろ確認", className: "warn" };
+      return { text: "最近あげた", className: "" };
+    }
+
+    function visibleFoods() {
+      const query = searchInput.value.trim().toLowerCase();
+      const sorted = [...foods].sort((a, b) => {
+        const aDays = daysSince(a.lastDate);
+        const bDays = daysSince(b.lastDate);
+        if (sortSelect.value === "name") return a.name.localeCompare(b.name, "ja");
+        if (sortSelect.value === "newest") return (aDays ?? 99999) - (bDays ?? 99999);
+        if (sortSelect.value === "untried") return Number(bDays === null) - Number(aDays === null) || a.name.localeCompare(b.name, "ja");
+        return (bDays ?? 99999) - (aDays ?? 99999);
+      });
+      return sorted.filter(food => food.name.toLowerCase().includes(query));
+    }
+
+    function render() {
+      const today = new Date();
+      todayLabel.textContent = `${today.getMonth() + 1}/${today.getDate()}`;
+
+      const stale = foods.filter(food => {
+        const days = daysSince(food.lastDate);
+        return days !== null && days >= 7;
+      }).length;
+      const untried = foods.filter(food => !food.lastDate).length;
+
+      totalCount.textContent = foods.length;
+      staleCount.textContent = stale;
+      untriedCount.textContent = untried;
+      storageWarning.classList.toggle("show", !storageAvailable);
+
+      cards.innerHTML = "";
+      const list = visibleFoods();
+      emptyState.classList.toggle("show", list.length === 0);
+
+      for (const food of list) {
+        const days = daysSince(food.lastDate);
+        const status = statusFor(food);
+        const article = document.createElement("article");
+        article.className = "card";
+        article.innerHTML = `
+          <div class="card-head">
+            <div class="name">
+              <div class="name-icon" aria-hidden="true">${food.icon || "・"}</div>
+              <h2>${escapeHtml(food.name)}</h2>
+            </div>
+            <span class="badge ${status.className}">${status.text}</span>
+          </div>
+          <div class="days">
+            <strong>${days === null ? "-" : days}</strong>
+            <span>${days === null ? "日数未記録" : "日前"}</span>
+          </div>
+          <div>最後：${formatDate(food.lastDate)}</div>
+          <div class="date-row">
+            <input class="field date-input" type="date" value="${food.lastDate}" max="${toLocalISO(new Date())}" aria-label="${escapeHtml(food.name)}をあげた日">
+            <button class="small today-button" type="button">今日あげた</button>
+          </div>
+          <textarea aria-label="${escapeHtml(food.name)}のメモ" placeholder="量、体調、反応など">${escapeHtml(food.note || "")}</textarea>
+          <div class="footer-actions">
+            <button class="ghost clear-button" type="button">日付を消す</button>
+            <button class="ghost danger delete-button" type="button">削除</button>
+          </div>
+        `;
+
+        article.querySelector(".date-input").addEventListener("change", event => {
+          updateFood(food.id, { lastDate: event.target.value });
+        });
+        article.querySelector(".today-button").addEventListener("click", () => {
+          updateFood(food.id, { lastDate: toLocalISO(new Date()) });
+        });
+        article.querySelector("textarea").addEventListener("input", event => {
+          updateFood(food.id, { note: event.target.value }, false);
+        });
+        article.querySelector(".clear-button").addEventListener("click", () => {
+          updateFood(food.id, { lastDate: "" });
+        });
+        article.querySelector(".delete-button").addEventListener("click", () => {
+          if (confirm(`${food.name}を削除しますか？`)) {
+            foods = foods.filter(item => item.id !== food.id);
+            saveFoods();
+            render();
+          }
+        });
+        cards.append(article);
+      }
+    }
+
+    function updateFood(id, changes, rerender = true) {
+      foods = foods.map(food => food.id === id ? { ...food, ...changes } : food);
+      saveFoods();
+      if (rerender) render();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    searchInput.addEventListener("input", render);
+    sortSelect.addEventListener("change", render);
+    addButton.addEventListener("click", () => {
+      foodName.value = "";
+      foodIcon.value = "";
+      foodDialog.showModal();
+      foodName.focus();
+    });
+    cancelDialog.addEventListener("click", () => foodDialog.close());
+    foodForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const name = foodName.value.trim();
+      if (!name) return;
+      foods.push({
+        id: createId(),
+        name,
+        icon: foodIcon.value.trim() || "・",
+        lastDate: "",
+        note: ""
+      });
+      saveFoods();
+      foodDialog.close();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
